@@ -57,12 +57,15 @@ def check_anthropic_emails():
         else:
             body = msg.get_payload(decode=True).decode()
 
-        # 邏輯判斷：如果標題或內容有 Gift Max，才發送警報
+        # 邏輯判斷：如果標題或內容有 Gift Max，才發送紅色警報
         if "Gift Max" in subject or "Gift Max" in body:
-            print(f"🚨 偵測到可疑交易：{subject}")
-            send_discord_webhook(f"偵測到可疑交易！\n標題：{subject}")
+            msg = f"⚠️ **嚴重警告：偵測到不明的 Gift Max 交易！**\n郵件標題：{subject}"
+            print(f"🚨 {msg}")
+            send_discord_webhook(msg, is_alert=True)
         else:
-            print(f"檢查完畢，最新一封 Anthropic 郵件為：{subject} (無 Gift Max 異常)")
+            msg = f"檢查完畢，最新一封 Anthropic 郵件為：{subject} (無 Gift Max 異常)"
+            print(f"✅ {msg}")
+            send_discord_webhook(msg, is_alert=False)
                     
         mail.logout()
     except Exception as e:
