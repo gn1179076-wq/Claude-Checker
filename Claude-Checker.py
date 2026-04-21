@@ -69,7 +69,7 @@ def check_anthropic_emails():
             msg_text = f"偵測到不明的 Gift Max 交易！\n標題：{subject}"
             send_discord_webhook(msg_text, is_alert=True)
         else:
-            msg_text = f"檢查完畢，最新 Anthropic 郵件為：{subject} (無 Gift Max 異常)"
+            # msg_text = f"檢查完畢，最新 Anthropic 郵件為：{subject} (無 Gift Max 異常)"
             send_discord_webhook(msg_text, is_alert=False)
                     
         mail.logout()
