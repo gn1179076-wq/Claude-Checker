@@ -1,10 +1,8 @@
 name: Claude Billing Monitor
 
-# 設定執行排程 (每 15 分鐘執行一次)
 on:
   schedule:
     - cron: '*/15 * * * *'
-  # 允許你在 GitHub 介面手動點擊「Run workflow」進行測試
   workflow_dispatch: 
 
 jobs:
@@ -12,26 +10,28 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    # 1. 將你的程式碼載入到虛擬機
     - uses: actions/checkout@v4
     
-    # 2. 安裝 Python 環境
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
         
-    # 3. 安裝必要的套件 (因為這支程式只用了 requests，所以安裝它即可)
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
         pip install requests
         
-    # 4. 執行你的程式
     - name: Run monitor script
       env:
-        # 從 GitHub Secrets 讀取設定
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
         EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
       run: python Claude-Checker.py
+
+    # --- 新增這一段：如果程式執行失敗，發送 Discord 通知告訴你「監控掛了」 ---
+    - name: Notify on failure
+      if: failure()
+      run: |
+        curl -H "Content-Type: application/json" \
+        -d '{"content": "🚨 **監控系統報錯** 🚨\nGitHub Actions 執行失敗，請檢查 GitHub 頁面確認原因！"}' \
+        ${{ secrets.DISCORD_WEBHOOK_URL }}
