@@ -34,6 +34,7 @@ def check_anthropic_emails():
             body = msg.get_payload(decode=True).decode()
 
         # --- 修改重點在這裡 ---
+        is_alert = flase
         if "Gift Max" in subject or "Gift Max" in body:
             # 只有異常時才發送 Discord
             msg_text = f"偵測到不明的 Gift Max 交易！\n標題：{subject}"
