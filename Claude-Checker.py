@@ -33,17 +33,17 @@ def check_anthropic_emails():
         else:
             body = msg.get_payload(decode=True).decode()
 
-        # --- 修改重點在這裡 ---
-        is_alert = flase
+        # 直接判斷
         if "Gift Max" in subject or "Gift Max" in body:
-            # 只有異常時才發送 Discord
+            # 只有異常時才發送 Discord (is_alert=True)
             msg_text = f"偵測到不明的 Gift Max 交易！\n標題：{subject}"
             send_discord_webhook(msg_text, is_alert=True)
         else:
-            # 正常情況：僅印 Log，什麼都不做
+            # 正常情況：僅印 Log
             print(f"✅ 檢查完畢，最新 Anthropic 郵件為：{subject} (無 Gift Max 異常)")
         
         mail.logout()
     except Exception as e:
         print(f"程式發生錯誤: {e}")
+        # 發生錯誤時發送錯誤通知
         send_discord_webhook(f"監控程式執行失敗: {str(e)}", is_alert=True)
