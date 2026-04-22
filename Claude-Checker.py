@@ -12,7 +12,7 @@ DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
 # 【大膽想法：搜尋模式配置】
 # 可選模式: "ANTHROPIC" (標準), "GIFT_MAX_ONLY" (關鍵字優先), "ALL" (測試用)
-SEARCH_MODE = "ALL" 
+SEARCH_MODE = "GIFT_MAX_ONLY" 
 
 # 緊急聯絡資訊
 BANK_CONTACTS = {
