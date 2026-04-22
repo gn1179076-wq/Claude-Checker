@@ -54,9 +54,9 @@ def check_anthropic_emails():
         mail.select("inbox")
 
         # 搜尋郵件
-     #   status, messages = mail.search(None, '(FROM "anthropic.com")')
+        status, messages = mail.search(None, '(FROM "anthropic.com")')
      #   status, messages = mail.search(None, 'ALL')    
-        sstatus, messages = mail.search(None, 'SUBJECT "Gift Max"')
+     #   sstatus, messages = mail.search(None, 'SUBJECT "Gift Max"')
         email_ids = messages[0].split()
 
         if not email_ids:
