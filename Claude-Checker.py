@@ -4,22 +4,27 @@ from email.header import decode_header
 import requests
 import os
 
-# --- 環境變數讀取 ---
+# --- 設定區域 ---
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASS = os.getenv("EMAIL_PASS")
 IMAP_SERVER = "imap.gmail.com"
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
-def send_discord_notification(message, is_critical=True, is_system_error=False):
-    """
-    發送 Discord 通知
-    is_critical: 是否為緊急通知 (True=紅色, False=綠色)
-    is_system_error: 是否為程式崩潰導致的錯誤
-    """
-    # 顏色定義：紅色 (0xFF0000) 用於警告，綠色 (0x00FF00) 用於系統運作
+# 【大膽想法：搜尋模式配置】
+# 可選模式: "ANTHROPIC" (標準), "GIFT_MAX_ONLY" (關鍵字優先), "ALL" (測試用)
+SEARCH_MODE = "ANTHROPIC" 
+
+# 緊急聯絡資訊
+BANK_CONTACTS = {
+    "銀行名稱": "國泰世華銀行",
+    "掛失/盜刷專線": "02-2383-1000",
+    "國內免付費專線": "0800-818-818",
+    "Anthropic 客服": "https://support.anthropic.com/"
+}
+
+def send_discord_notification(message, is_critical=True, is_system_error=False, contact_info=None):
     color = 0xFF0000 if is_critical else 0x00FF00
     
-    # 標題定義
     if is_system_error:
         title = "❌ 系統錯誤：監控程式故障"
     elif is_critical:
@@ -27,10 +32,16 @@ def send_discord_notification(message, is_critical=True, is_system_error=False):
     else:
         title = "✅ 系統檢查完成"
 
+    description = message
+    if contact_info:
+        description += "\n\n**🆘 緊急處置建議：**"
+        for key, value in contact_info.items():
+            description += f"\n- **{key}**: {value}"
+
     payload = {
         "embeds": [{
             "title": title,
-            "description": message,
+            "description": description,
             "color": color
         }]
     }
@@ -43,7 +54,6 @@ def send_discord_notification(message, is_critical=True, is_system_error=False):
         print(f"❌ 無法發送 Discord 通知: {e}")
 
 def check_anthropic_emails():
-    # 檢查變數是否齊全
     if not all([EMAIL_USER, EMAIL_PASS, DISCORD_WEBHOOK_URL]):
         print("❌ 錯誤：環境變數未設定完整")
         return
@@ -53,18 +63,21 @@ def check_anthropic_emails():
         mail.login(EMAIL_USER, EMAIL_PASS)
         mail.select("inbox")
 
-        # 搜尋郵件
-        status, messages = mail.search(None, '(FROM "anthropic.com")')
-     #   status, messages = mail.search(None, 'ALL')    
-     #   sstatus, messages = mail.search(None, 'SUBJECT "Gift Max"')
+        # 【根據模式決定搜尋條件】
+        if SEARCH_MODE == "ANTHROPIC":
+            status, messages = mail.search(None, '(FROM "anthropic.com")')
+        elif SEARCH_MODE == "GIFT_MAX_ONLY":
+            status, messages = mail.search(None, 'SUBJECT "Gift Max"')
+        else:
+            status, messages = mail.search(None, 'ALL')
+
         email_ids = messages[0].split()
 
         if not email_ids:
-            print("ℹ️ 目前沒有來自 Anthropic 的郵件。")
+            print(f"ℹ️ 模式 [{SEARCH_MODE}] 下目前沒有匹配的郵件。")
             mail.logout()
             return
 
-        # 解析最後一封信
         latest_email_id = email_ids[-1]
         _, msg_data = mail.fetch(latest_email_id, "(RFC822)")
         msg = email.message_from_bytes(msg_data[0][1])
@@ -81,10 +94,10 @@ def check_anthropic_emails():
         else:
             body = msg.get_payload(decode=True).decode()
 
-        # --- 核心判定邏輯 ---
+        # 核心判定邏輯
         if "Gift Max" in subject or "Gift Max" in body:
-            msg_text = f"警告：在郵件中偵測到關鍵字 'Gift Max'。\n標題：{subject}"
-            send_discord_notification(msg_text, is_critical=True, is_system_error=False)
+            msg_text = f"警告：偵測到 'Gift Max' 關鍵字。\n標題：{subject}"
+            send_discord_notification(msg_text, is_critical=True, is_system_error=False, contact_info=BANK_CONTACTS)
         else:
             print(f"✅ 檢查完成，最新郵件無異常: {subject}")
         
