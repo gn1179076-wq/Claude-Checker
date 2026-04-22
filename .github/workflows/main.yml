@@ -2,7 +2,7 @@ name: Claude Billing Monitor
 
 on:
   schedule:
-    - cron: '*/15 * * * *' # 先改成 5 分鐘看看會不會動
+    - cron: '*/30 * * * *' # 這是每 30 分鐘執行一次
   workflow_dispatch:
 
 jobs:
